@@ -65,7 +65,7 @@ export function TeamBuilder() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {team.map((pokemon) => (
             <div key={pokemon.id} className="relative">
-              <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} team={team} />
+              <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} />
               <Button
                 variant="secondary"
                 className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
@@ -119,7 +119,7 @@ export function TeamBuilder() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginatedPokemon.map((pokemon) => (
             <div key={pokemon.id} className="relative group">
-              <PokemonCard pokemon={pokemon} team={team} />
+              <PokemonCard pokemon={pokemon} />
               {!team.find(p => p.id === pokemon.id) && team.length < 6 && (
                 <Button
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
