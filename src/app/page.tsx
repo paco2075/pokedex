@@ -1,5 +1,3 @@
-import { gen1Pokemon } from "@/data/pokemon";
-import { PokemonCard } from "@/components/PokemonCard";
 import Link from 'next/link';
 
 export default function Home() {

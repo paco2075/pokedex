@@ -1,7 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
 import { Pokemon, typeColors, gen1Pokemon } from "@/data/pokemon";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Helper to get the pre-evolution of a Pokemon
@@ -46,12 +45,10 @@ function getCompleteEvolutionChain(pokemon: Pokemon, allPokemon: Pokemon[]): Pok
   return chain;
 }
 
-export function PokemonCard({ pokemon, nickname, team }: { pokemon: Pokemon, nickname?: string, team?: Pokemon[] }) {
+export function PokemonCard({ pokemon, nickname }: { pokemon: Pokemon, nickname?: string }) {
   const mainType = pokemon.type[0];
   const cardBg = typeColors[mainType] || "bg-white";
-  
-  const evolutionChain = getCompleteEvolutionChain(pokemon, gen1Pokemon);
-  const isMiddleEvolution = evolutionChain.findIndex(p => p.id === pokemon.id) > 0;
+    const evolutionChain = getCompleteEvolutionChain(pokemon, gen1Pokemon);
 
   return (
     <Dialog>

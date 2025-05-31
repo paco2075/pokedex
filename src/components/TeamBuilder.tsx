@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { gen1Pokemon, Pokemon, typeColors } from "@/data/pokemon";
+import { gen1Pokemon, Pokemon } from "@/data/pokemon";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
 

@@ -1,6 +1,3 @@
-import { Suspense } from 'react';
-import { Pokemon } from '@/data/pokemon';
-
 export function PokemonCardSkeleton() {
   return (
     <div className="border rounded-lg p-4 flex flex-col items-center gap-2 shadow animate-pulse bg-gray-100">
