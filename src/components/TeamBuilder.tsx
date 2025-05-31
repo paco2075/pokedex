@@ -118,16 +118,16 @@ export function TeamBuilder() {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginatedPokemon.map((pokemon) => (
-            <div key={pokemon.id} className="relative group">              <PokemonCard pokemon={pokemon} />
-              {!team.find(p => p.id === pokemon.id) && team.length < 6 && (
-                <Button
-                  className="absolute top-2 right-2"
-                  size="sm"
-                  onClick={() => handleAddClick(pokemon)}
-                >
-                  Add
-                </Button>
-              )}
+            <div key={pokemon.id} className="relative">
+              <PokemonCard pokemon={pokemon} />
+              <Button
+                className="absolute top-2 right-2"
+                size="sm"
+                onClick={() => handleAddClick(pokemon)}
+                disabled={Boolean(team.find(p => p.id === pokemon.id)) || team.length >= 6}
+              >
+                Add
+              </Button>
             </div>
           ))}
         </div>
