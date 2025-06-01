@@ -5,11 +5,19 @@ import { PokemonCard } from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
 
 export type TeamMember = Pokemon & { nickname: string };
+export type Team = {
+  id: string;
+  name: string;
+  pokemon: TeamMember[];
+};
 
 const ITEMS_PER_PAGE = 20;
 
 export function TeamBuilder() {
-  const [team, setTeam] = React.useState<TeamMember[]>([]);
+  const [teams, setTeams] = React.useState<Team[]>([]);
+  const [currentTeamId, setCurrentTeamId] = React.useState<string | null>(null);
+  const [showNewTeamModal, setShowNewTeamModal] = React.useState(false);
+  const [newTeamName, setNewTeamName] = React.useState("");
   const [nicknameInput, setNicknameInput] = React.useState("");
   const [pendingAdd, setPendingAdd] = React.useState<Pokemon | null>(null);
   const [page, setPage] = React.useState(1);
@@ -20,17 +28,24 @@ export function TeamBuilder() {
   const [authPassword, setAuthPassword] = React.useState('');
   const [authError, setAuthError] = React.useState('');
 
+  const currentTeam = React.useMemo(() => 
+    teams.find(t => t.id === currentTeamId) || null
+  , [teams, currentTeamId]);
+
   const totalPages = Math.ceil(gen1Pokemon.length / ITEMS_PER_PAGE);
   const paginatedPokemon = gen1Pokemon.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
 
+  // Persist user
   React.useEffect(() => {
     if (typeof window !== 'undefined' && user) {
       localStorage.setItem('pokedex_user', user);
     }
   }, [user]);
+
+  // Load user from storage
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('pokedex_user');
@@ -38,28 +53,32 @@ export function TeamBuilder() {
     }
   }, []);
 
-  // Load team when user changes
+  // Load teams when user changes
   React.useEffect(() => {
     if (user) {
-      const savedTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
-      setTeam(savedTeams[user] || []);
+      const savedTeams = JSON.parse(localStorage.getItem(`pokedex_teams_${user}`) || '[]');
+      setTeams(savedTeams);
+      setCurrentTeamId(savedTeams[0]?.id || null);
     } else {
-      setTeam([]);
+      setTeams([]);
+      setCurrentTeamId(null);
     }
   }, [user]);
 
-  // Save team whenever it changes
+  // Save teams whenever they change
   React.useEffect(() => {
     if (user) {
-      const savedTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
-      savedTeams[user] = team;
-      localStorage.setItem('pokedex_teams', JSON.stringify(savedTeams));
+      localStorage.setItem(`pokedex_teams_${user}`, JSON.stringify(teams));
     }
-  }, [team, user]);
+  }, [teams, user]);
 
   function handleAddClick(pokemon: Pokemon) {
     if (!user) {
       setShowAuthModal(true);
+      return;
+    }
+    if (!currentTeam) {
+      setShowNewTeamModal(true);
       return;
     }
     setNicknameInput(pokemon.name);
@@ -71,15 +90,53 @@ export function TeamBuilder() {
       setShowAuthModal(true);
       return;
     }
-    if (pendingAdd && team.length < 6 && !team.find((p) => p.id === pendingAdd.id)) {
-      setTeam([...team, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name }]);
+    if (!currentTeam) {
+      setShowNewTeamModal(true);
+      return;
+    }
+    if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {
+      const updatedTeams = teams.map(team => 
+        team.id === currentTeamId 
+          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name }] }
+          : team
+      );
+      setTeams(updatedTeams);
     }
     setPendingAdd(null);
     setNicknameInput("");
   }
 
   function removeFromTeam(pokemon: TeamMember) {
-    setTeam(team.filter((p) => p.id !== pokemon.id));
+    if (!currentTeam) return;
+    const updatedTeams = teams.map(team =>
+      team.id === currentTeamId
+        ? { ...team, pokemon: team.pokemon.filter(p => p.id !== pokemon.id) }
+        : team
+    );
+    setTeams(updatedTeams);
+  }
+
+  function handleNewTeam(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    
+    const newTeam: Team = {
+      id: crypto.randomUUID(),
+      name: newTeamName.trim(),
+      pokemon: []
+    };
+    
+    setTeams(prev => [...prev, newTeam]);
+    setCurrentTeamId(newTeam.id);
+    setNewTeamName("");
+    setShowNewTeamModal(false);
+  }
+
+  function handleSignOut() {
+    setUser(null);
+    setTeams([]);
+    setCurrentTeamId(null);
+    localStorage.removeItem('pokedex_user');
   }
 
   function handleAuthSubmit(e: React.FormEvent) {
@@ -109,12 +166,6 @@ export function TeamBuilder() {
     }
     setAuthUsername('');
     setAuthPassword('');
-  }
-
-  function handleSignOut() {
-    setUser(null);
-    setTeam([]); // Clear team when signing out
-    localStorage.removeItem('pokedex_user');
   }
 
   return (
@@ -151,7 +202,32 @@ export function TeamBuilder() {
           </div>
         </div>
       )}
+
+      {/* New Team Modal */}
+      {showNewTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col gap-4 min-w-[300px] w-full max-w-xs">
+            <h2 className="text-xl font-bold mb-2 text-center">Create New Team</h2>
+            <form onSubmit={handleNewTeam} className="flex flex-col gap-3">
+              <input
+                className="border rounded px-2 py-1 text-lg"
+                placeholder="Team Name"
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+                maxLength={30}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="secondary" onClick={() => setShowNewTeamModal(false)} type="button">Cancel</Button>
+                <Button type="submit">Create Team</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold text-center my-4">Pokédex Team Builder</h1>
+
       {/* Auth Bar */}
       <div className="flex justify-end mb-2">
         {user ? (
@@ -163,6 +239,24 @@ export function TeamBuilder() {
           <Button size="sm" onClick={() => { setShowAuthModal(true); setAuthMode('signin'); }}>Sign In / Sign Up</Button>
         )}
       </div>
+
+      {/* Team Selection */}
+      {user && (
+        <div className="flex items-center gap-4 mb-4">
+          <select 
+            className="border rounded px-3 py-2 bg-white"
+            value={currentTeamId || ''}
+            onChange={e => setCurrentTeamId(e.target.value || null)}
+          >
+            <option value="">Select a team...</option>
+            {teams.map(team => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
+          <Button onClick={() => setShowNewTeamModal(true)}>New Team</Button>
+        </div>
+      )}
+
       {/* Nickname Modal */}
       {pendingAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -185,9 +279,15 @@ export function TeamBuilder() {
 
       {/* Current Team */}
       <div>
-        <h2 className="text-2xl font-bold mb-4 sm:mb-6">Your Team ({team.length}/6)</h2>
+        <h2 className="text-2xl font-bold mb-4 sm:mb-6">
+          {currentTeam 
+            ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)` 
+            : user 
+              ? "Select or create a team to start" 
+              : "Sign in to create teams"}
+        </h2>
         <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
-          {team.map((pokemon) => (
+          {currentTeam?.pokemon.map((pokemon) => (
             <div key={pokemon.id} className="relative">
               <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} />
               <Button
@@ -199,7 +299,7 @@ export function TeamBuilder() {
               </Button>
             </div>
           ))}
-          {Array.from({ length: 6 - team.length }).map((_, i) => (
+          {currentTeam && Array.from({ length: 6 - (currentTeam?.pokemon.length || 0) }).map((_, i) => (
             <div
               key={i}
               className="border-2 border-dashed border-gray-300 rounded-lg h-36 sm:h-48 flex items-center justify-center"
@@ -209,6 +309,7 @@ export function TeamBuilder() {
           ))}
         </div>
       </div>
+
       {/* Available Pokemon */}
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-2 sm:gap-0">
@@ -246,7 +347,11 @@ export function TeamBuilder() {
                 className="absolute top-2 right-2"
                 size="sm"
                 onClick={() => handleAddClick(pokemon)}
-                disabled={Boolean(team.find(p => p.id === pokemon.id)) || team.length >= 6}
+                disabled={
+                  !currentTeam || 
+                  currentTeam.pokemon.length >= 6 || 
+                  Boolean(currentTeam.pokemon.find(p => p.id === pokemon.id))
+                }
               >
                 Add
               </Button>
