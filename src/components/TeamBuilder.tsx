@@ -37,6 +37,28 @@ export function TeamBuilder() {
       if (saved) setUser(saved);
     }
   }, []);
+  // Save/load team per user
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      const allTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
+      if (allTeams[user]) {
+        setTeam(allTeams[user]);
+      } else {
+        setTeam([]);
+      }
+    }
+    if (!user) {
+      setTeam([]);
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      const allTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
+      allTeams[user] = team;
+      localStorage.setItem('pokedex_teams', JSON.stringify(allTeams));
+    }
+  }, [team, user]);
 
   function handleAddClick(pokemon: Pokemon) {
     setNicknameInput(pokemon.name);
@@ -87,6 +109,7 @@ export function TeamBuilder() {
   function handleSignOut() {
     setUser(null);
     localStorage.removeItem('pokedex_user');
+    setTeam([]);
   }
 
   return (

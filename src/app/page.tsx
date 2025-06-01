@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Hero Section */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 max-w-7xl mx-auto">
         <div className="text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 drop-shadow-sm">
             Gen 1 Pokémon Companion
@@ -13,18 +13,18 @@ export default function Home() {
             Your ultimate resource for the original 151 Pokémon. Build teams, explore the Pokédex, 
             and become a better trainer!
           </p>
-          <div className="flex gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 w-full sm:w-auto">
             <Link 
               href="/team-builder"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
             >
-              Build Your Team
+              Team Builder
             </Link>
             <Link 
               href="/pokedex"
-              className="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"
+              className="bg-gray-200 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-center"
             >
-              Browse Pokédex
+              Pokédex
             </Link>
           </div>
         </div>
