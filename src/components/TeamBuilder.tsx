@@ -37,35 +37,40 @@ export function TeamBuilder() {
       if (saved) setUser(saved);
     }
   }, []);
-  // Save/load team per user
+
+  // Load team when user changes
   React.useEffect(() => {
-    if (typeof window !== 'undefined' && user) {
-      const allTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
-      if (allTeams[user]) {
-        setTeam(allTeams[user]);
-      } else {
-        setTeam([]);
-      }
-    }
-    if (!user) {
+    if (user) {
+      const savedTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
+      setTeam(savedTeams[user] || []);
+    } else {
       setTeam([]);
     }
   }, [user]);
 
+  // Save team whenever it changes
   React.useEffect(() => {
-    if (typeof window !== 'undefined' && user) {
-      const allTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
-      allTeams[user] = team;
-      localStorage.setItem('pokedex_teams', JSON.stringify(allTeams));
+    if (user) {
+      const savedTeams = JSON.parse(localStorage.getItem('pokedex_teams') || '{}');
+      savedTeams[user] = team;
+      localStorage.setItem('pokedex_teams', JSON.stringify(savedTeams));
     }
   }, [team, user]);
 
   function handleAddClick(pokemon: Pokemon) {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setNicknameInput(pokemon.name);
     setPendingAdd(pokemon);
   }
 
   function confirmAdd() {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     if (pendingAdd && team.length < 6 && !team.find((p) => p.id === pendingAdd.id)) {
       setTeam([...team, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name }]);
     }
@@ -108,8 +113,8 @@ export function TeamBuilder() {
 
   function handleSignOut() {
     setUser(null);
+    setTeam([]); // Clear team when signing out
     localStorage.removeItem('pokedex_user');
-    setTeam([]);
   }
 
   return (
