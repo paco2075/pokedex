@@ -169,11 +169,11 @@ export function TeamBuilder() {
   }
 
   return (
-    <div className="flex flex-col gap-6 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-4 px-2 sm:px-4 md:px-6 max-w-7xl mx-auto w-full">
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 flex flex-col gap-4 min-w-[300px] w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
+          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-md mx-2">
             <h2 className="text-2xl font-bold text-center">{authMode === 'signin' ? 'Sign In' : 'Sign Up'}</h2>
             <form onSubmit={handleAuthSubmit} className="flex flex-col gap-4">
               <input
@@ -205,8 +205,8 @@ export function TeamBuilder() {
 
       {/* New Team Modal */}
       {showNewTeamModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 flex flex-col gap-4 min-w-[300px] w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
+          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-md mx-2">
             <h2 className="text-2xl font-bold text-center">Create New Team</h2>
             <form onSubmit={handleNewTeam} className="flex flex-col gap-4">
               <input
@@ -226,25 +226,26 @@ export function TeamBuilder() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 py-6">
-        <h1 className="text-3xl sm:text-4xl font-bold">Pokédex Team Builder</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 py-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Pokédex Team Builder</h1>
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <span className="text-sm text-gray-700">Signed in as <b>{user}</b></span>
+              <span className="text-sm text-gray-700 hidden sm:inline">Signed in as <b>{user}</b></span>
+              <span className="text-sm text-gray-700 sm:hidden"><b>{user}</b></span>
               <Button size="sm" variant="outline" onClick={handleSignOut}>Sign Out</Button>
             </>
           ) : (
-            <Button size="lg" onClick={() => { setShowAuthModal(true); setAuthMode('signin'); }}>Sign In / Sign Up</Button>
+            <Button onClick={() => { setShowAuthModal(true); setAuthMode('signin'); }}>Sign In</Button>
           )}
         </div>
       </div>
 
       {/* Team Selection */}
       {user && (
-        <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-xl">
+        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 p-3 bg-gray-50 rounded-lg">
           <select 
-            className="flex-1 max-w-xs border rounded-lg px-4 py-2 bg-white text-lg"
+            className="flex-1 border rounded-lg px-3 py-2 bg-white text-base"
             value={currentTeamId || ''}
             onChange={e => setCurrentTeamId(e.target.value || null)}
           >
@@ -253,14 +254,14 @@ export function TeamBuilder() {
               <option key={team.id} value={team.id}>{team.name}</option>
             ))}
           </select>
-          <Button size="lg" onClick={() => setShowNewTeamModal(true)}>New Team</Button>
+          <Button onClick={() => setShowNewTeamModal(true)}>New Team</Button>
         </div>
       )}
 
       {/* Nickname Modal */}
       {pendingAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 flex flex-col gap-4 min-w-[300px] w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
+          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-md mx-2">
             <div className="text-xl font-bold">Give a nickname to {pendingAdd.name}?</div>
             <input
               className="border rounded-lg px-4 py-2 text-lg"
@@ -278,9 +279,9 @@ export function TeamBuilder() {
       )}
 
       {/* Current Team */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl sm:text-3xl font-bold">
+          <h2 className="text-xl sm:text-2xl font-bold">
             {currentTeam 
               ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)` 
               : user 
@@ -288,13 +289,13 @@ export function TeamBuilder() {
                 : "Sign in to create teams"}
           </h2>
         </div>
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
           {currentTeam?.pokemon.map((pokemon) => (
             <div key={pokemon.id} className="relative aspect-square">
               <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} />
               <Button
                 variant="secondary"
-                className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full shadow-lg hover:shadow-xl transition-shadow"
                 onClick={() => removeFromTeam(pokemon)}
               >
                 ×
@@ -304,51 +305,53 @@ export function TeamBuilder() {
           {currentTeam && Array.from({ length: 6 - (currentTeam?.pokemon.length || 0) }).map((_, i) => (
             <div
               key={i}
-              className="border-2 border-dashed border-gray-300 rounded-xl aspect-square flex items-center justify-center bg-gray-50"
+              className="border-2 border-dashed border-gray-200 rounded-lg aspect-square flex items-center justify-center bg-gray-50"
             >
-              <span className="text-gray-400">Empty Slot</span>
+              <span className="text-gray-400 text-sm">Empty</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Available Pokemon */}
-      <div className="space-y-6 mt-8 pb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold">Available Pokémon</h2>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-sm">
-            <span className="text-gray-600">
-              Showing {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, gen1Pokemon.length)} of {gen1Pokemon.length}
+      <div className="space-y-4 mt-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl sm:text-2xl font-bold">Available Pokémon</h2>
+            <span className="text-xs sm:text-sm text-gray-600">
+              {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, gen1Pokemon.length)} of {gen1Pokemon.length}
             </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                size="lg"
-              >
-                Previous
-              </Button>
-              <span className="px-4 py-2 text-gray-600 bg-gray-50 rounded-lg min-w-[100px] text-center">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                size="lg"
-              >
-                Next
-              </Button>
-            </div>
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              size="sm"
+              className="w-24"
+            >
+              Previous
+            </Button>
+            <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg min-w-[80px] text-center">
+              {page} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              size="sm"
+              className="w-24"
+            >
+              Next
+            </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
           {paginatedPokemon.map((pokemon) => (
             <div key={pokemon.id} className="relative aspect-square">
               <PokemonCard pokemon={pokemon} />
               <Button
-                className="absolute top-2 right-2 shadow-lg hover:shadow-xl transition-shadow"
+                className="absolute top-1 right-1 shadow-lg hover:shadow-xl transition-shadow"
                 size="sm"
                 onClick={() => handleAddClick(pokemon)}
                 disabled={
