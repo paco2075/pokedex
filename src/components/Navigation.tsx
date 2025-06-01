@@ -17,12 +17,11 @@ export function Navigation() {
               className="text-gray-900 hover:text-gray-600 px-3 py-2 rounded-md text-sm font-medium"
             >
               Team Builder
-            </Link>
-            <Link 
+            </Link>              <Link 
               href="/pokedex" 
               className="text-gray-900 hover:text-gray-600 px-3 py-2 rounded-md text-sm font-medium"
             >
-              Collection
+              Pokédex
             </Link>
           </div>
         </div>
