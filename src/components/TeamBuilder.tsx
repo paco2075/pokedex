@@ -1,10 +1,14 @@
 "use client";
 import * as React from "react";
 import { gen1Pokemon, Pokemon } from "@/data/pokemon";
+import { gen1Moves, Move } from "@/data/moves";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
 
-export type TeamMember = Pokemon & { nickname: string };
+export type TeamMember = Pokemon & { 
+  nickname: string;
+  moves: string[]; // array of move names, max 4
+};
 export type Team = {
   id: string;
   name: string;
@@ -27,6 +31,8 @@ export function TeamBuilder() {
   const [authUsername, setAuthUsername] = React.useState('');
   const [authPassword, setAuthPassword] = React.useState('');
   const [authError, setAuthError] = React.useState('');
+  const [showMoveModal, setShowMoveModal] = React.useState(false);
+  const [selectedPokemon, setSelectedPokemon] = React.useState<TeamMember | null>(null);
 
   const currentTeam = React.useMemo(() => 
     teams.find(t => t.id === currentTeamId) || null
@@ -94,10 +100,9 @@ export function TeamBuilder() {
       setShowNewTeamModal(true);
       return;
     }
-    if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {
-      const updatedTeams = teams.map(team => 
+    if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {      const updatedTeams = teams.map(team => 
         team.id === currentTeamId 
-          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name }] }
+          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name, moves: [] }] }
           : team
       );
       setTeams(updatedTeams);
@@ -166,6 +171,63 @@ export function TeamBuilder() {
     }
     setAuthUsername('');
     setAuthPassword('');
+  }
+
+  function handleMoveChange(index: number, moveName: string) {
+    if (!selectedPokemon || !currentTeam) return;
+    
+    // Prevent selecting the same move twice
+    if (moveName && selectedPokemon.moves.includes(moveName) && !selectedPokemon.moves[index]?.includes(moveName)) {
+      return;
+    }
+    
+    const newMoves = [...selectedPokemon.moves];
+    if (moveName === "") {
+      newMoves.splice(index, 1);
+    } else {
+      newMoves[index] = moveName;
+    }
+
+    const updatedTeams = teams.map(team =>
+      team.id === currentTeamId
+        ? {
+            ...team,
+            pokemon: team.pokemon.map(p =>
+              p.id === selectedPokemon.id
+                ? { ...p, moves: newMoves }
+                : p
+            )
+          }
+        : team
+    );
+    setTeams(updatedTeams);
+  }
+
+  // Helper function to get move details
+  function getMoveDetails(moveName: string): Move | undefined {
+    return gen1Moves.find(move => move.name === moveName);
+  }
+
+  // Helper function to get type color class
+  function getTypeColorClass(type: string): string {
+    const typeColors: Record<string, string> = {
+      Normal: "bg-gray-400",
+      Fire: "bg-red-500",
+      Water: "bg-blue-500",
+      Electric: "bg-yellow-400",
+      Grass: "bg-green-500",
+      Ice: "bg-blue-200",
+      Fighting: "bg-red-700",
+      Poison: "bg-purple-500",
+      Ground: "bg-yellow-600",
+      Flying: "bg-indigo-400",
+      Psychic: "bg-pink-500",
+      Bug: "bg-lime-500",
+      Rock: "bg-yellow-800",
+      Ghost: "bg-purple-700",
+      Dragon: "bg-indigo-600",
+    };
+    return typeColors[type] || "bg-gray-200";
   }
 
   return (
@@ -278,6 +340,69 @@ export function TeamBuilder() {
         </div>
       )}
 
+      {/* Move Selection Modal */}
+      {showMoveModal && selectedPokemon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
+          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-xl mx-2">
+            <h2 className="text-2xl font-bold text-center">Select Moves for {selectedPokemon.nickname}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => {
+                const moveName = selectedPokemon.moves[i] || "";
+                const moveDetails = getMoveDetails(moveName);
+                return (
+                  <div key={i} className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Move {i + 1}</label>
+                      <select
+                        value={moveName}
+                        onChange={e => handleMoveChange(i, e.target.value)}
+                        className={`border rounded-lg px-3 py-2 text-base appearance-none ${
+                          moveName ? 'border-blue-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">-- Select Move --</option>
+                        {gen1Moves.map(move => {
+                          const isSelected = selectedPokemon.moves.includes(move.name);
+                          return (
+                            <option 
+                              key={move.name} 
+                              value={move.name}
+                              disabled={isSelected && !selectedPokemon.moves[i]?.includes(move.name)}
+                            >
+                              {move.name} {isSelected ? "(Already Selected)" : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    {moveDetails && (
+                      <div className="text-sm">
+                        <div className={`inline-block px-2 py-0.5 rounded text-white mb-1 ${getTypeColorClass(moveDetails.type)}`}>
+                          {moveDetails.type}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-gray-600">
+                          {moveDetails.power !== null && (
+                            <div>Power: {moveDetails.power}</div>
+                          )}
+                          {moveDetails.accuracy !== null && (
+                            <div>Acc: {moveDetails.accuracy}%</div>
+                          )}
+                          <div>PP: {moveDetails.pp}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="secondary" onClick={() => setShowMoveModal(false)} size="lg">Cancel</Button>
+              <Button onClick={() => setShowMoveModal(false)} size="lg">Confirm Moves</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Current Team */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -300,6 +425,21 @@ export function TeamBuilder() {
               >
                 ×
               </Button>
+              <Button
+                onClick={() => { setSelectedPokemon(pokemon); setShowMoveModal(true); }}
+                className="absolute bottom-1 left-1 px-2 h-7 rounded-full shadow-lg hover:shadow-xl transition-shadow flex items-center gap-1"
+                variant="outline"
+              >
+                <span className="text-xs">
+                  {pokemon.moves.length}/4
+                </span>
+                <span>≡</span>
+              </Button>
+              {pokemon.moves.length > 0 && (
+                <div className="absolute bottom-1 right-1 bg-white/90 rounded-full px-2 py-0.5 text-xs border shadow-sm">
+                  {pokemon.moves.length} moves
+                </div>
+              )}
             </div>
           ))}
           {currentTeam && Array.from({ length: 6 - (currentTeam?.pokemon.length || 0) }).map((_, i) => (
