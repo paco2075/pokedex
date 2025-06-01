@@ -38,7 +38,7 @@ export function TeamBuilder() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 px-2 sm:px-0">
       {/* Nickname Modal */}
       {pendingAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -61,8 +61,8 @@ export function TeamBuilder() {
 
       {/* Current Team */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">Your Team ({team.length}/6)</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <h2 className="text-2xl font-bold mb-4 sm:mb-6">Your Team ({team.length}/6)</h2>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
           {team.map((pokemon) => (
             <div key={pokemon.id} className="relative">
               <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} />
@@ -78,19 +78,18 @@ export function TeamBuilder() {
           {Array.from({ length: 6 - team.length }).map((_, i) => (
             <div
               key={i}
-              className="border-2 border-dashed border-gray-300 rounded-lg h-48 flex items-center justify-center"
+              className="border-2 border-dashed border-gray-300 rounded-lg h-36 sm:h-48 flex items-center justify-center"
             >
               <span className="text-gray-400">Empty Slot</span>
             </div>
           ))}
         </div>
       </div>
-
       {/* Available Pokemon */}
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Available Pokémon</h2>
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-2 sm:gap-0">
+          <h2 className="text-2xl font-bold mb-2 sm:mb-0">Available Pokémon</h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <span className="text-sm text-gray-600">
               Showing {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, gen1Pokemon.length)} of {gen1Pokemon.length}
             </span>
@@ -115,8 +114,7 @@ export function TeamBuilder() {
             </div>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {paginatedPokemon.map((pokemon) => (
             <div key={pokemon.id} className="relative">
               <PokemonCard pokemon={pokemon} />
