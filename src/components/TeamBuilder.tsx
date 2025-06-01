@@ -13,12 +13,30 @@ export function TeamBuilder() {
   const [nicknameInput, setNicknameInput] = React.useState("");
   const [pendingAdd, setPendingAdd] = React.useState<Pokemon | null>(null);
   const [page, setPage] = React.useState(1);
+  const [user, setUser] = React.useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
+  const [authMode, setAuthMode] = React.useState<'signin' | 'signup'>('signin');
+  const [authUsername, setAuthUsername] = React.useState('');
+  const [authPassword, setAuthPassword] = React.useState('');
+  const [authError, setAuthError] = React.useState('');
 
   const totalPages = Math.ceil(gen1Pokemon.length / ITEMS_PER_PAGE);
   const paginatedPokemon = gen1Pokemon.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      localStorage.setItem('pokedex_user', user);
+    }
+  }, [user]);
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pokedex_user');
+      if (saved) setUser(saved);
+    }
+  }, []);
 
   function handleAddClick(pokemon: Pokemon) {
     setNicknameInput(pokemon.name);
@@ -37,8 +55,85 @@ export function TeamBuilder() {
     setTeam(team.filter((p) => p.id !== pokemon.id));
   }
 
+  function handleAuthSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthError('');
+    if (!authUsername || !authPassword) {
+      setAuthError('Username and password required');
+      return;
+    }
+    const users = JSON.parse(localStorage.getItem('pokedex_users') || '{}');
+    if (authMode === 'signup') {
+      if (users[authUsername]) {
+        setAuthError('Username already exists');
+        return;
+      }
+      users[authUsername] = authPassword;
+      localStorage.setItem('pokedex_users', JSON.stringify(users));
+      setUser(authUsername);
+      setShowAuthModal(false);
+    } else {
+      if (!users[authUsername] || users[authUsername] !== authPassword) {
+        setAuthError('Invalid username or password');
+        return;
+      }
+      setUser(authUsername);
+      setShowAuthModal(false);
+    }
+    setAuthUsername('');
+    setAuthPassword('');
+  }
+
+  function handleSignOut() {
+    setUser(null);
+    localStorage.removeItem('pokedex_user');
+  }
+
   return (
     <div className="flex flex-col gap-8 px-2 sm:px-0">
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col gap-4 min-w-[300px] w-full max-w-xs">
+            <h2 className="text-xl font-bold mb-2 text-center">{authMode === 'signin' ? 'Sign In' : 'Sign Up'}</h2>
+            <form onSubmit={handleAuthSubmit} className="flex flex-col gap-3">
+              <input
+                className="border rounded px-2 py-1 text-lg"
+                placeholder="Username"
+                value={authUsername}
+                onChange={e => setAuthUsername(e.target.value)}
+                autoFocus
+              />
+              <input
+                className="border rounded px-2 py-1 text-lg"
+                placeholder="Password"
+                type="password"
+                value={authPassword}
+                onChange={e => setAuthPassword(e.target.value)}
+              />
+              {authError && <div className="text-red-500 text-sm">{authError}</div>}
+              <Button type="submit" className="w-full">{authMode === 'signin' ? 'Sign In' : 'Sign Up'}</Button>
+            </form>
+            <div className="flex justify-between text-sm mt-2">
+              <button className="text-blue-600 hover:underline" onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}>
+                {authMode === 'signin' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+              </button>
+              <button className="text-gray-500 hover:underline" onClick={() => setShowAuthModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Auth Bar */}
+      <div className="flex justify-end mb-2">
+        {user ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">Signed in as <b>{user}</b></span>
+            <Button size="sm" variant="outline" onClick={handleSignOut}>Sign Out</Button>
+          </div>
+        ) : (
+          <Button size="sm" onClick={() => { setShowAuthModal(true); setAuthMode('signin'); }}>Sign In / Sign Up</Button>
+        )}
+      </div>
       {/* Nickname Modal */}
       {pendingAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
