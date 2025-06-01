@@ -361,18 +361,20 @@ export function TeamBuilder() {
                         }`}
                       >
                         <option value="">-- Select Move --</option>
-                        {gen1Moves.map(move => {
-                          const isSelected = selectedPokemon.moves.includes(move.name);
-                          return (
-                            <option 
-                              key={move.name} 
-                              value={move.name}
-                              disabled={isSelected && !selectedPokemon.moves[i]?.includes(move.name)}
-                            >
-                              {move.name} {isSelected ? "(Already Selected)" : ""}
-                            </option>
-                          );
-                        })}
+                        {gen1Moves
+                          .filter(move => selectedPokemon.learnableMoves?.includes(move.name))
+                          .map(move => {
+                            const isSelected = selectedPokemon.moves.includes(move.name);
+                            return (
+                              <option 
+                                key={move.name} 
+                                value={move.name}
+                                disabled={isSelected && !selectedPokemon.moves[i]?.includes(move.name)}
+                              >
+                                {move.name}
+                              </option>
+                            );
+                          })}
                       </select>
                     </div>
                     {moveDetails && (
