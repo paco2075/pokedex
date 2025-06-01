@@ -317,7 +317,7 @@ export function TeamBuilder() {
       <div className="space-y-4 mt-6">
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl sm:text-2xl font-bold">Available Pokémon</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Available Poketmon</h2>
             <span className="text-xs sm:text-sm text-gray-600">
               {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, gen1Pokemon.length)} of {gen1Pokemon.length}
             </span>

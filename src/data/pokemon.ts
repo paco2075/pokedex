@@ -1,4 +1,4 @@
-// Gen 1 Pokémon type definition and data
+// Gen 1 Poketmon type definition and data
 export type PokemonStats = {
   hp: number;
   attack: number;
@@ -17,7 +17,7 @@ export type Pokemon = {
   evolutions?: number[]; // IDs of evolutions
 };
 
-// Type color mapping for Gen 1 Pokémon
+// Type color mapping for Gen 1 Poketmon
 export const typeColors: Record<string, string> = {
   Normal: "bg-gray-300 text-gray-800",
   Fire: "bg-orange-400 text-white",
@@ -3157,6 +3157,7 @@ export const gen1Pokemon = [
     "id": 135,
     "name": "Jolteon",
     "type": [
+     
       "Electric"
     ],
     "stats": {

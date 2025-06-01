@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pokémon Team Builder",
-  description: "Build your perfect Gen 1 Pokémon team and explore the Pokédex",
+  title: "Poketmon",
+  description: "Build teams and explore Gen 1 Poketmon",
 };
 
 export default function RootLayout({
