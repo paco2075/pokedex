@@ -123,6 +123,7 @@ export function TeamBuilder() {
           </div>
         </div>
       )}
+      <h1 className="text-3xl font-bold text-center my-4">Pokédex Team Builder</h1>
       {/* Auth Bar */}
       <div className="flex justify-end mb-2">
         {user ? (
