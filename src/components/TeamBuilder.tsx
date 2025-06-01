@@ -4,10 +4,11 @@ import { gen1Pokemon, Pokemon } from "@/data/pokemon";
 import { gen1Moves, Move } from "@/data/moves";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
-
-export type TeamMember = Pokemon & { 
+import { useAuth } from "@/lib/auth-context";
+export type TeamMember = Pokemon & {
   nickname: string;
   moves: string[]; // array of move names, max 4
+  learnableMoves?: string[]; // list of moves this pokemon can learn
 };
 export type Team = {
   id: string;
@@ -18,6 +19,7 @@ export type Team = {
 const ITEMS_PER_PAGE = 20;
 
 export function TeamBuilder() {
+  const { user } = useAuth();
   const [teams, setTeams] = React.useState<Team[]>([]);
   const [currentTeamId, setCurrentTeamId] = React.useState<string | null>(null);
   const [showNewTeamModal, setShowNewTeamModal] = React.useState(false);
@@ -25,12 +27,6 @@ export function TeamBuilder() {
   const [nicknameInput, setNicknameInput] = React.useState("");
   const [pendingAdd, setPendingAdd] = React.useState<Pokemon | null>(null);
   const [page, setPage] = React.useState(1);
-  const [user, setUser] = React.useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = React.useState(false);
-  const [authMode, setAuthMode] = React.useState<'signin' | 'signup'>('signin');
-  const [authUsername, setAuthUsername] = React.useState('');
-  const [authPassword, setAuthPassword] = React.useState('');
-  const [authError, setAuthError] = React.useState('');
   const [showMoveModal, setShowMoveModal] = React.useState(false);
   const [selectedPokemon, setSelectedPokemon] = React.useState<TeamMember | null>(null);
 
@@ -44,25 +40,10 @@ export function TeamBuilder() {
     page * ITEMS_PER_PAGE
   );
 
-  // Persist user
-  React.useEffect(() => {
-    if (typeof window !== 'undefined' && user) {
-      localStorage.setItem('pokedex_user', user);
-    }
-  }, [user]);
-
-  // Load user from storage
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pokedex_user');
-      if (saved) setUser(saved);
-    }
-  }, []);
-
   // Load teams when user changes
   React.useEffect(() => {
     if (user) {
-      const savedTeams = JSON.parse(localStorage.getItem(`pokedex_teams_${user}`) || '[]');
+      const savedTeams = JSON.parse(localStorage.getItem(`pokedex_teams_${user.uid}`) || '[]');
       setTeams(savedTeams);
       setCurrentTeamId(savedTeams[0]?.id || null);
     } else {
@@ -74,13 +55,12 @@ export function TeamBuilder() {
   // Save teams whenever they change
   React.useEffect(() => {
     if (user) {
-      localStorage.setItem(`pokedex_teams_${user}`, JSON.stringify(teams));
+      localStorage.setItem(`pokedex_teams_${user.uid}`, JSON.stringify(teams));
     }
   }, [teams, user]);
 
   function handleAddClick(pokemon: Pokemon) {
     if (!user) {
-      setShowAuthModal(true);
       return;
     }
     if (!currentTeam) {
@@ -93,7 +73,6 @@ export function TeamBuilder() {
 
   function confirmAdd() {
     if (!user) {
-      setShowAuthModal(true);
       return;
     }
     if (!currentTeam) {
@@ -102,7 +81,7 @@ export function TeamBuilder() {
     }
     if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {      const updatedTeams = teams.map(team => 
         team.id === currentTeamId 
-          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name, moves: [] }] }
+          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name, moves: [], learnableMoves: gen1Moves.map(m => m.name) }] }
           : team
       );
       setTeams(updatedTeams);
@@ -135,42 +114,6 @@ export function TeamBuilder() {
     setCurrentTeamId(newTeam.id);
     setNewTeamName("");
     setShowNewTeamModal(false);
-  }
-
-  function handleSignOut() {
-    setUser(null);
-    setTeams([]);
-    setCurrentTeamId(null);
-    localStorage.removeItem('pokedex_user');
-  }
-
-  function handleAuthSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setAuthError('');
-    if (!authUsername || !authPassword) {
-      setAuthError('Username and password required');
-      return;
-    }
-    const users = JSON.parse(localStorage.getItem('pokedex_users') || '{}');
-    if (authMode === 'signup') {
-      if (users[authUsername]) {
-        setAuthError('Username already exists');
-        return;
-      }
-      users[authUsername] = authPassword;
-      localStorage.setItem('pokedex_users', JSON.stringify(users));
-      setUser(authUsername);
-      setShowAuthModal(false);
-    } else {
-      if (!users[authUsername] || users[authUsername] !== authPassword) {
-        setAuthError('Invalid username or password');
-        return;
-      }
-      setUser(authUsername);
-      setShowAuthModal(false);
-    }
-    setAuthUsername('');
-    setAuthPassword('');
   }
 
   function handleMoveChange(index: number, moveName: string) {
@@ -232,39 +175,6 @@ export function TeamBuilder() {
 
   return (
     <div className="flex flex-col gap-4 px-2 sm:px-4 md:px-6 max-w-7xl mx-auto w-full">
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
-          <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-md mx-2">
-            <h2 className="text-2xl font-bold text-center">{authMode === 'signin' ? 'Sign In' : 'Sign Up'}</h2>
-            <form onSubmit={handleAuthSubmit} className="flex flex-col gap-4">
-              <input
-                className="border rounded-lg px-4 py-2 text-lg"
-                placeholder="Username"
-                value={authUsername}
-                onChange={e => setAuthUsername(e.target.value)}
-                autoFocus
-              />
-              <input
-                className="border rounded-lg px-4 py-2 text-lg"
-                placeholder="Password"
-                type="password"
-                value={authPassword}
-                onChange={e => setAuthPassword(e.target.value)}
-              />
-              {authError && <div className="text-red-500 text-sm">{authError}</div>}
-              <Button type="submit" className="w-full text-lg py-6">{authMode === 'signin' ? 'Sign In' : 'Sign Up'}</Button>
-            </form>
-            <div className="flex justify-between text-sm mt-2">
-              <button className="text-blue-600 hover:underline" onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}>
-                {authMode === 'signin' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
-              </button>
-              <button className="text-gray-500 hover:underline" onClick={() => setShowAuthModal(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* New Team Modal */}
       {showNewTeamModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
@@ -290,17 +200,6 @@ export function TeamBuilder() {
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 py-4">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Pokédex Team Builder</h1>
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <span className="text-sm text-gray-700 hidden sm:inline">Signed in as <b>{user}</b></span>
-              <span className="text-sm text-gray-700 sm:hidden"><b>{user}</b></span>
-              <Button size="sm" variant="outline" onClick={handleSignOut}>Sign Out</Button>
-            </>
-          ) : (
-            <Button onClick={() => { setShowAuthModal(true); setAuthMode('signin'); }}>Sign In</Button>
-          )}
-        </div>
       </div>
 
       {/* Team Selection */}
@@ -410,10 +309,9 @@ export function TeamBuilder() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-bold">
             {currentTeam 
-              ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)` 
-              : user 
+              ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)`              : user 
                 ? "Select or create a team to start" 
-                : "Sign in to create teams"}
+                : "Login to create teams"}
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
