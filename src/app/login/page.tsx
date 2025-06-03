@@ -11,7 +11,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/pokedex');
+      router.push('/');
     }
   }, [user, router]);
 

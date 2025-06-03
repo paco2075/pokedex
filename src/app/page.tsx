@@ -18,8 +18,7 @@ export default function Home() {
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
             >
               Team Builder
-            </Link>            <Link 
-              href="/pokedex"
+            </Link>            <Link              href="/collection"
               className="bg-gray-200 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-center"
             >
               Browse Collection
