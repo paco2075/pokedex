@@ -5,6 +5,8 @@ import { gen1Moves, Move } from "@/data/moves";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { saveUserTeams, getUserTeams } from '@/lib/teams';
+
 export type TeamMember = Pokemon & {
   nickname: string;
   moves: string[]; // array of move names, max 4
@@ -29,6 +31,7 @@ export function TeamBuilder() {
   const [page, setPage] = React.useState(1);
   const [showMoveModal, setShowMoveModal] = React.useState(false);
   const [selectedPokemon, setSelectedPokemon] = React.useState<TeamMember | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const currentTeam = React.useMemo(() => 
     teams.find(t => t.id === currentTeamId) || null
@@ -39,25 +42,56 @@ export function TeamBuilder() {
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
-
   // Load teams when user changes
   React.useEffect(() => {
-    if (user) {
-      const savedTeams = JSON.parse(localStorage.getItem(`pokedex_teams_${user.uid}`) || '[]');
-      setTeams(savedTeams);
-      setCurrentTeamId(savedTeams[0]?.id || null);
-    } else {
-      setTeams([]);
-      setCurrentTeamId(null);
-    }
-  }, [user]);
+    let isMounted = true;
+    
+    async function loadTeams() {
+      if (!user) {
+        setTeams([]);
+        setCurrentTeamId(null);
+        setIsLoading(false);
+        return;
+      }
 
+      setIsLoading(true);
+      try {
+        const loadedTeams = await getUserTeams(user.uid);
+        if (isMounted) {
+          setTeams(loadedTeams);
+          setCurrentTeamId(loadedTeams[0]?.id || null);
+        }
+      } catch (error) {
+        console.error('Error loading teams:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+    
+    loadTeams();
+    return () => { isMounted = false; };
+  }, [user]);
   // Save teams whenever they change
   React.useEffect(() => {
-    if (user) {
-      localStorage.setItem(`pokedex_teams_${user.uid}`, JSON.stringify(teams));
+    let isSaving = false;
+    
+    async function persistTeams() {
+      if (!user || isSaving || isLoading) return;
+      
+      isSaving = true;
+      try {
+        await saveUserTeams(user.uid, teams);
+      } catch (error) {
+        console.error('Error saving teams:', error);
+      } finally {
+        isSaving = false;
+      }
     }
-  }, [teams, user]);
+    
+    persistTeams();
+  }, [teams, user, isLoading]);
 
   function handleAddClick(pokemon: Pokemon) {
     if (!user) {
@@ -99,10 +133,9 @@ export function TeamBuilder() {
     );
     setTeams(updatedTeams);
   }
-
-  function handleNewTeam(e: React.FormEvent) {
+  async function handleNewTeam(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTeamName.trim()) return;
+    if (!newTeamName.trim() || !user || isLoading) return;
     
     const newTeam: Team = {
       id: crypto.randomUUID(),
@@ -110,10 +143,20 @@ export function TeamBuilder() {
       pokemon: []
     };
     
-    setTeams(prev => [...prev, newTeam]);
+    const updatedTeams = [...teams, newTeam];
+    setTeams(updatedTeams);
     setCurrentTeamId(newTeam.id);
     setNewTeamName("");
     setShowNewTeamModal(false);
+
+    try {
+      await saveUserTeams(user.uid, updatedTeams);
+    } catch (error) {
+      console.error('Error saving new team:', error);
+      // Rollback on error
+      setTeams(teams);
+      setCurrentTeamId(currentTeamId);
+    }
   }
 
   function handleMoveChange(index: number, moveName: string) {
@@ -302,17 +345,21 @@ export function TeamBuilder() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Current Team */}
+      )}      {/* Current Team */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-bold">
-            {currentTeam 
-              ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)`              : user 
-                ? "Select or create a team to start" 
-                : "Login to create teams"}
+            {isLoading 
+              ? "Loading teams..."
+              : currentTeam 
+                ? `${currentTeam.name} (${currentTeam.pokemon.length}/6)`
+                : user 
+                  ? "Select or create a team to start" 
+                  : "Login to create teams"}
           </h2>
+          {isLoading && (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+          )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
           {currentTeam?.pokemon.map((pokemon) => (
