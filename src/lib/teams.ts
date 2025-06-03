@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import type { Team } from '@/components/TeamBuilder';
 
 const TEAMS_COLLECTION = 'teams';
