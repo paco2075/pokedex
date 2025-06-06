@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { saveUserTeams, getUserTeams } from '@/lib/teams';
 
-export type TeamMember = Pokemon & {
+export type TeamMember = {
+  id: number; // Reference to the Pokemon's ID
   nickname: string;
   moves: string[]; // array of move names, max 4
   learnableMoves?: string[]; // list of moves this pokemon can learn
 };
+
 export type Team = {
   id: string;
   name: string;
@@ -19,6 +21,20 @@ export type Team = {
 };
 
 const ITEMS_PER_PAGE = 20;
+
+// Helper function to merge Pokemon data
+function getFullPokemonData(teamMember: TeamMember): Pokemon & { nickname: string; moves: string[]; learnableMoves?: string[] } {
+  const staticData = gen1Pokemon.find(p => p.id === teamMember.id);
+  if (!staticData) {
+    throw new Error(`Pokemon with id ${teamMember.id} not found`);
+  }
+  return {
+    ...staticData,
+    nickname: teamMember.nickname,
+    moves: teamMember.moves,
+    learnableMoves: teamMember.learnableMoves
+  };
+}
 
 export function TeamBuilder() {
   const { user } = useAuth();
@@ -113,9 +129,21 @@ export function TeamBuilder() {
       setShowNewTeamModal(true);
       return;
     }
-    if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {      const updatedTeams = teams.map(team => 
+  if (pendingAdd && currentTeam.pokemon.length < 6 && !currentTeam.pokemon.find((p) => p.id === pendingAdd.id)) {
+      const updatedTeams = teams.map(team => 
         team.id === currentTeamId 
-          ? { ...team, pokemon: [...team.pokemon, { ...pendingAdd, nickname: nicknameInput.trim() || pendingAdd.name, moves: [], learnableMoves: gen1Moves.map(m => m.name) }] }
+          ? { 
+              ...team, 
+              pokemon: [
+                ...team.pokemon, 
+                { 
+                  id: pendingAdd.id,
+                  nickname: nicknameInput.trim() || pendingAdd.name,
+                  moves: [],
+                  learnableMoves: gen1Moves.map(m => m.name)
+                }
+              ] 
+            }
           : team
       );
       setTeams(updatedTeams);
@@ -282,11 +310,10 @@ export function TeamBuilder() {
         </div>
       )}
 
-      {/* Move Selection Modal */}
-      {showMoveModal && selectedPokemon && (
+      {/* Move Selection Modal */}      {showMoveModal && selectedPokemon && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2">
           <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-4 min-w-[280px] w-full max-w-xl mx-2">
-            <h2 className="text-2xl font-bold text-center">Select Moves for {selectedPokemon.nickname}</h2>
+            <h2 className="text-2xl font-bold text-center">Select Moves for {getFullPokemonData(selectedPokemon).nickname}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => {
                 const moveName = selectedPokemon.moves[i] || "";
@@ -361,34 +388,36 @@ export function TeamBuilder() {
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
-          {currentTeam?.pokemon.map((pokemon) => (
-            <div key={pokemon.id} className="relative aspect-square">
-              <PokemonCard pokemon={pokemon} nickname={pokemon.nickname} />
-              <Button
-                variant="secondary"
-                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-                onClick={() => removeFromTeam(pokemon)}
-              >
-                ×
-              </Button>
-              <Button
-                onClick={() => { setSelectedPokemon(pokemon); setShowMoveModal(true); }}
-                className="absolute bottom-1 left-1 px-2 h-7 rounded-full shadow-lg hover:shadow-xl transition-shadow flex items-center gap-1"
-                variant="outline"
-              >
-                <span className="text-xs">
-                  {pokemon.moves.length}/4
-                </span>
-                <span>≡</span>
-              </Button>
-              {pokemon.moves.length > 0 && (
-                <div className="absolute bottom-1 right-1 bg-white/90 rounded-full px-2 py-0.5 text-xs border shadow-sm">
-                  {pokemon.moves.length} moves
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">          {currentTeam?.pokemon.map((pokemon) => {
+            const fullPokemon = getFullPokemonData(pokemon);
+            return (
+              <div key={pokemon.id} className="relative aspect-square">
+                <PokemonCard pokemon={fullPokemon} nickname={pokemon.nickname} />
+                <Button
+                  variant="secondary"
+                  className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                  onClick={() => removeFromTeam(pokemon)}
+                >
+                  ×
+                </Button>
+                <Button
+                  onClick={() => { setSelectedPokemon(pokemon); setShowMoveModal(true); }}
+                  className="absolute bottom-1 left-1 px-2 h-7 rounded-full shadow-lg hover:shadow-xl transition-shadow flex items-center gap-1"
+                  variant="outline"
+                >
+                  <span className="text-xs">
+                    {pokemon.moves.length}/4
+                  </span>
+                  <span>≡</span>
+                </Button>
+                {pokemon.moves.length > 0 && (
+                  <div className="absolute bottom-1 right-1 bg-white/90 rounded-full px-2 py-0.5 text-xs border shadow-sm">
+                    {pokemon.moves.length} moves
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {currentTeam && Array.from({ length: 6 - (currentTeam?.pokemon.length || 0) }).map((_, i) => (
             <div
               key={i}
